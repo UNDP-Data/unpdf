@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "unpdf"
+version = "0.1.0-beta"
+description = "A lightweight utility library for standardised text extraction from PDFs that relies on pypdfium2."
+authors = ["mykolaskrynnyk <45297092+mykolaskrynnyk@users.noreply.github.com>"]
+license = "Apache License 2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pypdfium2 = ">=3.19.0"
+tqdm = ">=4.64.1"
+pydantic = ">=1.10.4"
+spacy = ">=3.5.0"
+en-core-web-sm = {url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0.tar.gz#egg=en_core_web_sm"}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+notebook = "^6.5.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
