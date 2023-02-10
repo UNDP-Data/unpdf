@@ -13,6 +13,7 @@ class MetadataEntity(BaseModel):
     tokens: list[str]
     noun_chunks: Optional[list[str]]
     subject_phrases: Optional[list[str]]
+    dobject_phrases: Optional[list[str]]
 
 
 class SentenceEntity(BaseModel):
