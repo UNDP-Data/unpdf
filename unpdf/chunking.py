@@ -32,7 +32,12 @@ class Chunker:
         return f'{self.__repr__()} powered by {model_lang} {model_name} model from spaCy v{model_version}.'
 
     @staticmethod
-    def get_quasiparagraphs(entity: Union[PageEntity, DocumentEntity]) -> list[ParagraphEntity]:
+    def _standardise_spaces(text: str) -> str:
+        # replace repeated whitespaces
+        text = re.sub(pattern=r'\s+', repl=' ', string=text.strip())
+        return text
+
+    def get_quasiparagraphs(self, entity: Union[PageEntity, DocumentEntity]) -> list[ParagraphEntity]:
         """
         Split extracted text into paragraph-like structures.
 
@@ -61,8 +66,7 @@ class Chunker:
         for page in pages:
             lines, paragraph_id = list(), 0
             for line in re.split(pattern=r'\r\n', string=page.text):
-                line = line.strip()
-                line = re.sub(pattern=r'\s+', repl=' ', string=line)  # replace repeated whitespaces
+                line = self._standardise_spaces(line)
                 lines.append(line)
 
                 # assume it is a paragraph if a line ends with a punctuation mark and there are at least 3 lines already
@@ -104,26 +108,23 @@ class Chunker:
             sentences.append(sentence)
         return sentences
 
-    def get_sentences_from_page(self, page: PageEntity, **kwargs) -> list[SentenceEntity]:
-        paragraph_texts = [paragraph.text for paragraph in self.get_quasiparagraphs(page)]
-        stream = self.nlp.pipe(texts=paragraph_texts, batch_size=self.pipe_batch_size, **kwargs)
+    def get_sentences_from_page(self, page: PageEntity) -> list[SentenceEntity]:
+        text = self._standardise_spaces(page.text)
         sentences = list()
-        for paragraph_id, doc in enumerate(stream):
-            for sentence_id, sent in enumerate(doc.sents):
-                sentence = SentenceEntity(
-                    doc_id=page.doc_id,
-                    page_id=page.page_id,
-                    paragraph_id=paragraph_id,
-                    sentence_id=sentence_id,
-                    text=sent.text,
-                    metadata=get_sentence_metadata(sent) if self.add_sentence_metadata else None,
-                )
-                sentences.append(sentence)
+        for sentence_id, sent in enumerate(self.nlp(text).sents):
+            sentence = SentenceEntity(
+                doc_id=page.doc_id,
+                page_id=page.page_id,
+                sentence_id=sentence_id,
+                text=sent.text,
+                metadata=get_sentence_metadata(sent) if self.add_sentence_metadata else None,
+            )
+            sentences.append(sentence)
         return sentences
 
     def get_sentences(
             self,
-            entity: Union[SentenceEntity, ParagraphEntity, PageEntity, DocumentEntity],
+            entity: Union[ParagraphEntity, PageEntity, DocumentEntity],
             progress_bar: bool = False,
     ) -> list[SentenceEntity]:
         if isinstance(entity, ParagraphEntity):
@@ -133,7 +134,7 @@ class Chunker:
         elif isinstance(entity, DocumentEntity):
             sentences = list()
             for page in tqdm(entity.pages) if progress_bar else entity.pages:
-                sentences.extend(self.get_sentences(page))
+                sentences.extend(self.get_sentences_from_page(page))
         else:
             raise ValueError(f'{type(entity)} is not supported. `entity` must be one of (ParagraphEntity, PageEntity, DocumentEntity)')
 
