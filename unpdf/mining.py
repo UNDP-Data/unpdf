@@ -34,7 +34,7 @@ def get_sentence_metadata(sent: Span, keep_stopwords: bool = False) -> MetadataE
         length=len(sent),
         tokens=[token.text for token in sent if not token.is_stop or keep_stopwords],
         noun_chunks=[noun_chunk.text for noun_chunk in sent.noun_chunks] or None,
-        subject_phrases=get_phrases(doc_or_span=sent, dep=nsubj) or None,
-        dobject_phrases=get_phrases(doc_or_span=sent, dep=dobj) or None,
+        subject_phrases=get_phrases(doc_or_span=sent, dep='nsubj') or None,
+        dobject_phrases=get_phrases(doc_or_span=sent, dep='dobj') or None,
     )
     return sentence_metadata
