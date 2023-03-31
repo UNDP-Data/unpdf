@@ -13,10 +13,14 @@ from spacy.symbols import nsubj, dobj
 from .entities import MetadataEntity
 
 
-def get_phrases(doc_or_span: Union[Doc, Span], dep: Literal[nsubj | dobj]):
+def get_phrases(doc_or_span: Union[Doc, Span], dep: Literal['nsubj', 'dobj']):
+    deps = {
+        'nsubj': nsubj,
+        'dobj': dobj
+    }
     phrases = list()
     for token in doc_or_span:
-        if token.dep == dep:
+        if token.dep == deps[dep]:
             subtree = list(token.subtree)
             start, end = subtree[0].i, subtree[-1].i + 1
             phrase = doc_or_span[start:end].text
