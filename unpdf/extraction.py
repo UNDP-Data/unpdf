@@ -64,7 +64,7 @@ def extract_text(file_path: str, progress_bar: bool = False, **kwargs) -> Docume
     pdf = pdfium.PdfDocument(file_path, **kwargs)
     pages = list()
     iterable = enumerate(pdf)
-    for idx, page in tqdm(iterable) if progress_bar else iterable:
+    for idx, page in tqdm(iterable, disable=not progress_bar):
         try:
             text = page.get_textpage().get_text()
             text, error = _preprocess_text(text), False
