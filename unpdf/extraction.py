@@ -5,6 +5,9 @@ This module defines routines for extracting text data from PDFs.
 import os
 import logging
 from unicodedata import normalize
+from datetime import datetime
+from pathlib import Path
+from typing import Union, BinaryIO
 
 # data wrangling
 import pypdfium2 as pdfium
@@ -39,14 +42,14 @@ def _preprocess_text(text: str) -> str:
     return text
 
 
-def extract_text(file_path: str, progress_bar: bool = False, **kwargs) -> DocumentEntity:
+def extract_text(input_data: Union[str, bytes, BinaryIO, Path], progress_bar: bool = False, **kwargs) -> DocumentEntity:
     """
     Extract text from a .pdf document.
 
     Parameters
     ----------
-    file_path : str
-        Path to a pdf to be extracted.
+    input_data : Union[str, bytes, BinaryIO, Path]
+        Input data that can be processed by pdfium, e.g., file path, bytes or byte buffer.
     progress_bar : bool, default=False
         If True, use tqdm as a progress bar when extracting text per page.
     **kwargs
@@ -57,11 +60,12 @@ def extract_text(file_path: str, progress_bar: bool = False, **kwargs) -> Docume
     doc : DocumentEntity
         Document entity, containing texts.
     """
-    file_name = os.path.basename(file_path)
-    file_name, file_extension = os.path.splitext(file_name)
-    assert file_extension.lower() == '.pdf', f'Expected a file with .pdf extension, obtained {file_extension}'
+    if isinstance(input_data, str):
+        doc_id = os.path.basename(input_data)  # 'path/to/file.pdf' -> 'file.pdf'
+    else:
+        doc_id = f'untitled-v{datetime.utcnow().isoformat()}'
 
-    pdf = pdfium.PdfDocument(file_path, **kwargs)
+    pdf = pdfium.PdfDocument(input_data, **kwargs)
     pages = list()
     iterable = enumerate(pdf)
     for idx, page in tqdm(iterable, disable=not progress_bar):
@@ -72,8 +76,8 @@ def extract_text(file_path: str, progress_bar: bool = False, **kwargs) -> Docume
             logging.exception(str(e))
             text, error = '', True
         finally:
-            page = PageEntity(doc_id=file_name, page_id=idx, text=text, error=error)
+            page = PageEntity(doc_id=doc_id, page_id=idx, text=text, error=error)
             pages.append(page)
 
-    doc = DocumentEntity(doc_id=file_name, pages=pages)
+    doc = DocumentEntity(doc_id=doc_id, pages=pages)
     return doc
