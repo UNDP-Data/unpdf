@@ -13,28 +13,25 @@ class MetadataEntity(BaseModel):
     tokens: list[str]
     noun_chunks: Optional[list[str]]
     subject_phrases: Optional[list[str]]
+    dobject_phrases: Optional[list[str]]
 
 
-class SentenceEntity(BaseModel):
-    doc_id: Optional[str]
-    page_id: int
-    paragraph_id: int
-    sentence_id: int
-    text: str
-    metadata: Optional[MetadataEntity]
-
-
-class ParagraphEntity(BaseModel):
-    doc_id: Optional[str]
-    page_id: int
-    paragraph_id: int
-    text: str
-
-
-class PageEntity(BaseModel):
+class _BaseEntity(BaseModel):
     doc_id: str
     page_id: int
     text: str
+
+
+class SentenceEntity(_BaseEntity):
+    sentence_id: int
+    metadata: Optional[MetadataEntity]
+
+
+class QuasiParagraphEntity(_BaseEntity):
+    paragraph_id: int
+
+
+class PageEntity(_BaseEntity):
     error: bool = False
 
 
