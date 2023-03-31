@@ -42,7 +42,12 @@ def _preprocess_text(text: str) -> str:
     return text
 
 
-def extract_text(input_data: Union[str, bytes, BinaryIO, Path], progress_bar: bool = False, **kwargs) -> DocumentEntity:
+def extract_text(
+        input_data: Union[str, bytes, BinaryIO, Path],
+        doc_id: str = None,
+        progress_bar: bool = False,
+        **kwargs,
+) -> DocumentEntity:
     """
     Extract text from a .pdf document.
 
@@ -50,6 +55,9 @@ def extract_text(input_data: Union[str, bytes, BinaryIO, Path], progress_bar: bo
     ----------
     input_data : Union[str, bytes, BinaryIO, Path]
         Input data that can be processed by pdfium, e.g., file path, bytes or byte buffer.
+    doc_id : str, default=None
+        Unique identifier for a document. By default, uses a file name if input_data is a string, otherwise creates
+         a unique identifier based on current time.
     progress_bar : bool, default=False
         If True, use tqdm as a progress bar when extracting text per page.
     **kwargs
@@ -60,9 +68,9 @@ def extract_text(input_data: Union[str, bytes, BinaryIO, Path], progress_bar: bo
     doc : DocumentEntity
         Document entity, containing texts.
     """
-    if isinstance(input_data, str):
+    if doc_id is None and isinstance(input_data, str):
         doc_id = os.path.basename(input_data)  # 'path/to/file.pdf' -> 'file.pdf'
-    else:
+    elif doc_id is None:
         doc_id = f'untitled-v{datetime.utcnow().isoformat()}'
 
     pdf = pdfium.PdfDocument(input_data, **kwargs)
