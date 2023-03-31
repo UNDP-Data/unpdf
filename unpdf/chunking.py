@@ -13,7 +13,7 @@ import en_core_web_sm
 from tqdm import tqdm
 
 # local packages
-from .entities import SentenceEntity, ParagraphEntity, PageEntity, DocumentEntity
+from .entities import SentenceEntity, QuasiParagraphEntity, PageEntity, DocumentEntity
 from .mining import get_sentence_metadata
 
 
@@ -38,7 +38,7 @@ class Chunker:
         text = re.sub(pattern=r'\s+', repl=' ', string=text.strip())
         return text
 
-    def get_quasiparagraphs(self, entity: Union[PageEntity, DocumentEntity]) -> list[ParagraphEntity]:
+    def get_quasiparagraphs(self, entity: Union[PageEntity, DocumentEntity]) -> list[QuasiParagraphEntity]:
         """
         Split extracted text into paragraph-like structures.
 
@@ -53,7 +53,7 @@ class Chunker:
 
         Returns
         -------
-        paragraphs : list[ParagraphEntity]
+        paragraphs : list[QuasiParagraphEntity]
             An array of paragraph-like structures.
         """
         if isinstance(entity, DocumentEntity):
@@ -72,7 +72,7 @@ class Chunker:
 
                 # assume it is a paragraph if a line ends with a punctuation mark and there are at least 3 lines already
                 if re.search(r'[.!?]$', line) and len(lines) >= 3:
-                    paragraph = ParagraphEntity(
+                    paragraph = QuasiParagraphEntity(
                         doc_id=entity.doc_id,
                         page_id=page.page_id,
                         paragraph_id=paragraph_id,
@@ -84,7 +84,7 @@ class Chunker:
 
             # handle the remaining lines if needed
             if lines:
-                paragraph = ParagraphEntity(
+                paragraph = QuasiParagraphEntity(
                     doc_id=entity.doc_id,
                     page_id=page.page_id,
                     paragraph_id=paragraph_id,
@@ -94,15 +94,15 @@ class Chunker:
 
         return paragraphs
 
-    def get_sentences_from_paragraph(self, paragraph: ParagraphEntity) -> list[SentenceEntity]:
+    def get_sentences_from_paragraph(self, paragraph: QuasiParagraphEntity) -> list[SentenceEntity]:
         sentences = list()
         doc = self.nlp(paragraph.text)
-        for sentence_id, sent in enumerate(doc.sents):
+        for sent_id, sent in enumerate(doc.sents):
             sentence = SentenceEntity(
                 doc_id=paragraph.doc_id,
                 page_id=paragraph.page_id,
                 paragraph_id=paragraph.paragraph_id,
-                sentence_id=sentence_id,
+                sentence_id=sent_id,
                 text=sent.text,
                 metadata=get_sentence_metadata(sent) if self.add_sentence_metadata else None,
             )
@@ -112,23 +112,23 @@ class Chunker:
     def get_sentences_from_page(self, page: PageEntity) -> list[SentenceEntity]:
         text = self._standardise_spaces(page.text)
         sentences = list()
-        for sentence_id, sent in enumerate(self.nlp(text).sents):
+        for sent_id, sent in enumerate(self.nlp(text).sents):
             sentence = SentenceEntity(
                 doc_id=page.doc_id,
                 page_id=page.page_id,
-                sentence_id=sentence_id,
+                sentence_id=sent_id,
                 text=sent.text,
                 metadata=get_sentence_metadata(sent) if self.add_sentence_metadata else None,
             )
             sentences.append(sentence)
         return sentences
 
-    def get_slices_from_page(self, page: PageEntity, window_size: int, step_size: int = 1) -> list[ParagraphEntity]:
+    def get_slices_from_page(self, page: PageEntity, window_size: int, step_size: int = 1) -> list[QuasiParagraphEntity]:
         paragraphs, sentences, paragraph_id = list(), deque(), 0
         for sent in self.get_sentences_from_page(page=page):
             sentences.append(sent.text)
             if len(sentences) == window_size:
-                paragraph = ParagraphEntity(
+                paragraph = QuasiParagraphEntity(
                     doc_id=page.doc_id,
                     page_id=page.page_id,
                     paragraph_id=paragraph_id,
@@ -146,7 +146,7 @@ class Chunker:
             window_size: int,
             step_size: int = 1,
             progress_bar: bool = False,
-    ) -> list[ParagraphEntity]:
+    ) -> list[QuasiParagraphEntity]:
         if isinstance(entity, PageEntity):
             slices = self.get_slices_from_page(page=entity, window_size=window_size, step_size=step_size)
         elif isinstance(entity, DocumentEntity):
@@ -159,10 +159,10 @@ class Chunker:
 
     def get_sentences(
             self,
-            entity: Union[ParagraphEntity, PageEntity, DocumentEntity],
+            entity: Union[QuasiParagraphEntity, PageEntity, DocumentEntity],
             progress_bar: bool = False,
     ) -> list[SentenceEntity]:
-        if isinstance(entity, ParagraphEntity):
+        if isinstance(entity, QuasiParagraphEntity):
             sentences = self.get_sentences_from_paragraph(paragraph=entity)
         elif isinstance(entity, PageEntity):
             sentences = self.get_sentences_from_page(page=entity)

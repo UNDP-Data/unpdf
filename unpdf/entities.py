@@ -27,7 +27,7 @@ class SentenceEntity(_BaseEntity):
     metadata: Optional[MetadataEntity]
 
 
-class ParagraphEntity(_BaseEntity):
+class QuasiParagraphEntity(_BaseEntity):
     paragraph_id: int
 
 
