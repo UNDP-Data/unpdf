@@ -66,7 +66,7 @@ def extract_text(file_path: str, progress_bar: bool = False, **kwargs) -> Docume
     iterable = enumerate(pdf)
     for idx, page in tqdm(iterable, disable=not progress_bar):
         try:
-            text = page.get_textpage().get_text()
+            text = page.get_textpage().get_text_range(index=0, count=-1)
             text, error = _preprocess_text(text), False
         except Exception as e:
             logging.exception(str(e))
