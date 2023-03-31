@@ -4,6 +4,7 @@ This module defines routines for extracting text data from PDFs.
 # standard library
 import os
 import logging
+from unicodedata import normalize
 
 # data wrangling
 import pypdfium2 as pdfium
@@ -15,9 +16,13 @@ from tqdm import tqdm
 from .entities import DocumentEntity, PageEntity
 
 
-def _remove_unprintable(text: str) -> str:
+def _preprocess_text(text: str) -> str:
     """
-    Remove unprintable characters, e.g., '\x02', '\x16' but keep newline and CR characters.
+    Preprocess a text by removing unprintable characters and standardising to NFD form.
+
+    The function removes unprintable characters , e.g., '\x02', '\x16' but keeps newline and CR characters.
+    NFD normalisation decomposes characters by canonical equivalence, which may be useful for use cases like
+    language identification or machine translation.
 
     Parameters
     ----------
@@ -27,9 +32,10 @@ def _remove_unprintable(text: str) -> str:
     Returns
     -------
     text : str
-        Input text with unprintable characters removed.
+        NFD-normalised text with unprintable characters removed.
     """
     text = ''.join(char for char in text if char.isprintable() or char in '\r\n')
+    text = normalize('NFD', text)  # '\u00E9' or 'é' (b'\xc3\xa9' in NFC) -> 'é' (b'e\xcc\x81' in NFD)
     return text
 
 
@@ -61,7 +67,7 @@ def extract_text(file_path: str, progress_bar: bool = False, **kwargs) -> Docume
     for idx, page in tqdm(iterable) if progress_bar else iterable:
         try:
             text = page.get_textpage().get_text()
-            text, error = _remove_unprintable(text), False
+            text, error = _preprocess_text(text), False
         except Exception as e:
             logging.exception(str(e))
             text, error = '', True
