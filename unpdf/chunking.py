@@ -123,40 +123,6 @@ class Chunker:
             sentences.append(sentence)
         return sentences
 
-    def get_slices_from_page(self, page: PageEntity, window_size: int, step_size: int = 1) -> list[QuasiParagraphEntity]:
-        paragraphs, sentences, paragraph_id = list(), deque(), 0
-        for sent in self.get_sentences_from_page(page=page):
-            sentences.append(sent.text)
-            if len(sentences) == window_size:
-                paragraph = QuasiParagraphEntity(
-                    doc_id=page.doc_id,
-                    page_id=page.page_id,
-                    paragraph_id=paragraph_id,
-                    text=' '.join(sentences),
-                )
-                paragraphs.append(paragraph)
-                paragraph_id += 1
-                for _ in range(step_size):
-                    sentences.popleft()
-        return paragraphs
-
-    def get_slices(
-            self,
-            entity: Union[PageEntity, DocumentEntity],
-            window_size: int,
-            step_size: int = 1,
-            progress_bar: bool = False,
-    ) -> list[QuasiParagraphEntity]:
-        if isinstance(entity, PageEntity):
-            slices = self.get_slices_from_page(page=entity, window_size=window_size, step_size=step_size)
-        elif isinstance(entity, DocumentEntity):
-            slices = list()
-            for page in tqdm(entity.pages) if progress_bar else entity.pages:
-                slices.extend(self.get_slices_from_page(page=page, window_size=window_size, step_size=step_size))
-        else:
-            raise ValueError(f'{type(entity)} is not supported. `entity` must be one of (PageEntity, DocumentEntity)')
-        return slices
-
     def get_sentences(
             self,
             entity: Union[QuasiParagraphEntity, PageEntity, DocumentEntity],
