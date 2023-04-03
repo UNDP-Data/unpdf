@@ -12,7 +12,7 @@ import en_core_web_sm
 from tqdm import tqdm
 
 # local packages
-from .entities import SentenceEntity, QuasiParagraphEntity, PageEntity, DocumentEntity
+from .entities import Sentence, QuasiParagraph, Page, Document
 from .cleaning import _standardise_spaces
 
 
@@ -30,7 +30,7 @@ class Chunker:
         model_version = self.nlp.meta['version']
         return f'{self.__repr__()} powered by {model_lang} {model_name} model from spaCy v{model_version}.'
 
-    def get_quasiparagraphs(self, entity: Union[PageEntity, DocumentEntity]) -> list[QuasiParagraphEntity]:
+    def get_quasiparagraphs(self, entity: Union[Page, Document]) -> list[QuasiParagraph]:
         """
         Split extracted text into paragraph-like structures.
 
@@ -40,7 +40,7 @@ class Chunker:
 
         Parameters
         ----------
-        entity : Union[PageEntity, DocumentEntity]
+        entity : Union[Page, Document]
             Page or document entity to be split into paragraphs.
 
         Returns
@@ -48,9 +48,9 @@ class Chunker:
         paragraphs : list[QuasiParagraphEntity]
             An array of paragraph-like structures.
         """
-        if isinstance(entity, DocumentEntity):
+        if isinstance(entity, Document):
             pages = entity.pages
-        elif isinstance(entity, PageEntity):
+        elif isinstance(entity, Page):
             pages = [entity]
         else:
             raise ValueError('Unsupported entity type.')
@@ -64,7 +64,7 @@ class Chunker:
 
                 # assume it is a paragraph if a line ends with a punctuation mark and there are at least 3 lines already
                 if re.search(r'[.!?]$', line) and len(lines) >= 3:
-                    paragraph = QuasiParagraphEntity(
+                    paragraph = QuasiParagraph(
                         doc_id=entity.doc_id,
                         page_id=page.page_id,
                         paragraph_id=paragraph_id,
@@ -76,7 +76,7 @@ class Chunker:
 
             # handle the remaining lines if needed
             if lines:
-                paragraph = QuasiParagraphEntity(
+                paragraph = QuasiParagraph(
                     doc_id=entity.doc_id,
                     page_id=page.page_id,
                     paragraph_id=paragraph_id,
@@ -86,11 +86,11 @@ class Chunker:
 
         return paragraphs
 
-    def get_sentences_from_paragraph(self, paragraph: QuasiParagraphEntity) -> list[SentenceEntity]:
+    def get_sentences_from_paragraph(self, paragraph: QuasiParagraph) -> list[Sentence]:
         sentences = list()
         doc = self.nlp(paragraph.text)
         for sent_id, sent in enumerate(doc.sents):
-            sentence = SentenceEntity(
+            sentence = Sentence(
                 doc_id=paragraph.doc_id,
                 page_id=paragraph.page_id,
                 paragraph_id=paragraph.paragraph_id,
@@ -100,11 +100,11 @@ class Chunker:
             sentences.append(sentence)
         return sentences
 
-    def get_sentences_from_page(self, page: PageEntity) -> list[SentenceEntity]:
+    def get_sentences_from_page(self, page: Page) -> list[Sentence]:
         text = _standardise_spaces(page.text)
         sentences = list()
         for sent_id, sent in enumerate(self.nlp(text).sents):
-            sentence = SentenceEntity(
+            sentence = Sentence(
                 doc_id=page.doc_id,
                 page_id=page.page_id,
                 sentence_id=sent_id,
@@ -113,20 +113,16 @@ class Chunker:
             sentences.append(sentence)
         return sentences
 
-    def get_sentences(
-            self,
-            entity: Union[QuasiParagraphEntity, PageEntity, DocumentEntity],
-            progress_bar: bool = False,
-    ) -> list[SentenceEntity]:
-        if isinstance(entity, QuasiParagraphEntity):
+    def get_sentences(self, entity: Union[QuasiParagraph, Page, Document], progress_bar: bool = False) -> list[Sentence]:
+        if isinstance(entity, QuasiParagraph):
             sentences = self.get_sentences_from_paragraph(paragraph=entity)
-        elif isinstance(entity, PageEntity):
+        elif isinstance(entity, Page):
             sentences = self.get_sentences_from_page(page=entity)
-        elif isinstance(entity, DocumentEntity):
+        elif isinstance(entity, Document):
             sentences = list()
             for page in tqdm(entity.pages) if progress_bar else entity.pages:
                 sentences.extend(self.get_sentences_from_page(page))
         else:
-            raise ValueError(f'{type(entity)} is not supported. `entity` must be one of (ParagraphEntity, PageEntity, DocumentEntity)')
+            raise ValueError(f'{type(entity)} is not supported. `entity` must be one of (QuasiParagraph, Page, Document)')
 
         return sentences

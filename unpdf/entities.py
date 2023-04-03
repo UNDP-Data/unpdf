@@ -14,21 +14,21 @@ class _BaseEntity(BaseModel):
     text: str
 
 
-class SentenceEntity(_BaseEntity):
+class Sentence(_BaseEntity):
     sentence_id: int
 
 
-class QuasiParagraphEntity(_BaseEntity):
+class QuasiParagraph(_BaseEntity):
     paragraph_id: int
 
 
-class PageEntity(_BaseEntity):
+class Page(_BaseEntity):
     error: bool = False
 
 
-class DocumentEntity(BaseModel):
+class Document(BaseModel):
     doc_id: str
-    pages: list[PageEntity]
+    pages: list[Page]
     _index: int = PrivateAttr(default=0)
 
     def __len__(self):

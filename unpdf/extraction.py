@@ -4,7 +4,6 @@ This module defines routines for extracting text data from PDFs.
 # standard library
 import os
 import logging
-from unicodedata import normalize
 from datetime import datetime
 from pathlib import Path
 from typing import Union, BinaryIO
@@ -16,7 +15,7 @@ import pypdfium2 as pdfium
 from tqdm import tqdm
 
 # local packages
-from .entities import DocumentEntity, PageEntity
+from .entities import Page, Document
 from .cleaning import _normalise_text
 
 
@@ -25,7 +24,7 @@ def extract_text(
         doc_id: str = None,
         progress_bar: bool = False,
         **kwargs,
-) -> DocumentEntity:
+) -> Document:
     """
     Extract text from a .pdf document.
 
@@ -43,7 +42,7 @@ def extract_text(
 
     Returns
     -------
-    doc : DocumentEntity
+    doc : Document
         Document entity, containing texts.
     """
     if doc_id is None and isinstance(input_data, str):
@@ -62,8 +61,8 @@ def extract_text(
             logging.exception(str(e))
             text, error = '', True
         finally:
-            page = PageEntity(doc_id=doc_id, page_id=idx, text=text, error=error)
+            page = Page(doc_id=doc_id, page_id=idx, text=text, error=error)
             pages.append(page)
 
-    doc = DocumentEntity(doc_id=doc_id, pages=pages)
+    doc = Document(doc_id=doc_id, pages=pages)
     return doc

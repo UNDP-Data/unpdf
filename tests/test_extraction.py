@@ -7,7 +7,7 @@ import re
 
 # local packages
 from unpdf.extraction import extract_text
-from unpdf.entities import DocumentEntity
+from unpdf.entities import Document
 
 
 def test_extract_text():
@@ -26,7 +26,7 @@ def test_extract_text():
             'at volutpat diam', 'volutpat diam ut', 'diam ut venenatis.', 'in metus vulputate', 'feugiat in fermentum.',
         ]
 
-        assert isinstance(doc, DocumentEntity), f'doc must be a DocumentEntity and not {type(doc)}'
+        assert isinstance(doc, Document), f'doc must be a DocumentEntity and not {type(doc)}'
         assert isinstance(doc.text, str), f'doc.text must be a string and not {type(doc.text)}'
         assert 6_000 < len(doc.text) < 7_000, f'doc.text length is unexpected {len(doc.text)}'
         text = re.sub(pattern=r'\s+', repl=' ', string=doc.text)
