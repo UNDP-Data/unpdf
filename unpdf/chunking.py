@@ -3,7 +3,6 @@ This module defines a Chunker class for chunking entities into paragraphs and se
 """
 # standard library
 import re
-from collections import deque
 from typing import Union, Callable
 
 # text mining
@@ -14,6 +13,7 @@ from tqdm import tqdm
 
 # local packages
 from .entities import SentenceEntity, QuasiParagraphEntity, PageEntity, DocumentEntity
+from .cleaning import _standardise_spaces
 
 
 class Chunker:
@@ -29,12 +29,6 @@ class Chunker:
         model_name = self.nlp.meta['name']
         model_version = self.nlp.meta['version']
         return f'{self.__repr__()} powered by {model_lang} {model_name} model from spaCy v{model_version}.'
-
-    @staticmethod
-    def _standardise_spaces(text: str) -> str:
-        # replace repeated whitespaces
-        text = re.sub(pattern=r'\s+', repl=' ', string=text.strip())
-        return text
 
     def get_quasiparagraphs(self, entity: Union[PageEntity, DocumentEntity]) -> list[QuasiParagraphEntity]:
         """
@@ -65,7 +59,7 @@ class Chunker:
         for page in pages:
             lines, paragraph_id = list(), 0
             for line in re.split(pattern=r'\r\n', string=page.text):
-                line = self._standardise_spaces(line)
+                line = _standardise_spaces(line)
                 lines.append(line)
 
                 # assume it is a paragraph if a line ends with a punctuation mark and there are at least 3 lines already
@@ -107,7 +101,7 @@ class Chunker:
         return sentences
 
     def get_sentences_from_page(self, page: PageEntity) -> list[SentenceEntity]:
-        text = self._standardise_spaces(page.text)
+        text = _standardise_spaces(page.text)
         sentences = list()
         for sent_id, sent in enumerate(self.nlp(text).sents):
             sentence = SentenceEntity(
