@@ -17,9 +17,8 @@ from .cleaning import _standardise_spaces
 
 
 class Chunker:
-    def __init__(self, preprocess_sent_func: Callable = None):
+    def __init__(self):
         self.nlp = en_core_web_sm.load(disable=['ner'])
-        self.preprocess_sent_func = preprocess_sent_func
 
     def __repr__(self):
         return 'Chunker()'
@@ -86,7 +85,7 @@ class Chunker:
 
         return paragraphs
 
-    def get_sentences_from_paragraph(self, paragraph: QuasiParagraph) -> list[Sentence]:
+    def get_sentences_from_paragraph(self, paragraph: QuasiParagraph, process_func: Callable = None) -> list[Sentence]:
         sentences = list()
         doc = self.nlp(paragraph.text)
         for sent_id, sent in enumerate(doc.sents):
@@ -95,12 +94,12 @@ class Chunker:
                 page_id=paragraph.page_id,
                 paragraph_id=paragraph.paragraph_id,
                 sentence_id=sent_id,
-                text=sent.text if self.preprocess_sent_func is None else self.preprocess_sent_func(sent),
+                text=sent.text if process_func is None else process_func(sent),
             )
             sentences.append(sentence)
         return sentences
 
-    def get_sentences_from_page(self, page: Page) -> list[Sentence]:
+    def get_sentences_from_page(self, page: Page, process_func: Callable = None) -> list[Sentence]:
         text = _standardise_spaces(page.text)
         sentences = list()
         for sent_id, sent in enumerate(self.nlp(text).sents):
@@ -108,20 +107,25 @@ class Chunker:
                 doc_id=page.doc_id,
                 page_id=page.page_id,
                 sentence_id=sent_id,
-                text=sent.text if self.preprocess_sent_func is None else self.preprocess_sent_func(sent),
+                text=sent.text if process_func is None else process_func(sent),
             )
             sentences.append(sentence)
         return sentences
 
-    def get_sentences(self, entity: Union[QuasiParagraph, Page, Document], progress_bar: bool = False) -> list[Sentence]:
+    def get_sentences(
+            self,
+            entity: Union[QuasiParagraph, Page, Document],
+            process_func: Callable = None,
+            progress_bar: bool = False,
+    ) -> list[Sentence]:
         if isinstance(entity, QuasiParagraph):
-            sentences = self.get_sentences_from_paragraph(paragraph=entity)
+            sentences = self.get_sentences_from_paragraph(paragraph=entity, process_func=process_func)
         elif isinstance(entity, Page):
-            sentences = self.get_sentences_from_page(page=entity)
+            sentences = self.get_sentences_from_page(page=entity, process_func=process_func)
         elif isinstance(entity, Document):
             sentences = list()
             for page in tqdm(entity.pages, disable=not progress_bar):
-                sentences.extend(self.get_sentences_from_page(page))
+                sentences.extend(self.get_sentences_from_page(page, process_func))
         else:
             raise ValueError(f'{type(entity)} is not supported. `entity` must be one of (QuasiParagraph, Page, Document)')
 
