@@ -8,14 +8,6 @@ from typing import Optional
 from pydantic import BaseModel, PrivateAttr
 
 
-class MetadataEntity(BaseModel):
-    length: int
-    tokens: list[str]
-    noun_chunks: Optional[list[str]]
-    subject_phrases: Optional[list[str]]
-    dobject_phrases: Optional[list[str]]
-
-
 class _BaseEntity(BaseModel):
     doc_id: str
     page_id: int
@@ -24,7 +16,6 @@ class _BaseEntity(BaseModel):
 
 class SentenceEntity(_BaseEntity):
     sentence_id: int
-    metadata: Optional[MetadataEntity]
 
 
 class QuasiParagraphEntity(_BaseEntity):

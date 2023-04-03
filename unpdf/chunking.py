@@ -14,17 +14,15 @@ from tqdm import tqdm
 
 # local packages
 from .entities import SentenceEntity, QuasiParagraphEntity, PageEntity, DocumentEntity
-from .mining import get_sentence_metadata
 
 
 class Chunker:
-    def __init__(self, add_sentence_metadata: bool = False, preprocess_sent_func: Callable = None):
+    def __init__(self, preprocess_sent_func: Callable = None):
         self.nlp = en_core_web_sm.load(disable=['ner'])
-        self.add_sentence_metadata = add_sentence_metadata
         self.preprocess_sent_func = preprocess_sent_func
 
     def __repr__(self):
-        return f'Chunker(add_sentence_metadata={self.add_sentence_metadata})'
+        return 'Chunker()'
 
     def __str__(self):
         model_lang = self.nlp.meta['lang']
@@ -103,8 +101,7 @@ class Chunker:
                 page_id=paragraph.page_id,
                 paragraph_id=paragraph.paragraph_id,
                 sentence_id=sent_id,
-                text=self.preprocess_sent_func(sent) if self.preprocess_sent_func is not None else sent.text,
-                metadata=get_sentence_metadata(sent) if self.add_sentence_metadata else None,
+                text=sent.text if self.preprocess_sent_func is None else self.preprocess_sent_func(sent),
             )
             sentences.append(sentence)
         return sentences
@@ -117,8 +114,7 @@ class Chunker:
                 doc_id=page.doc_id,
                 page_id=page.page_id,
                 sentence_id=sent_id,
-                text=self.preprocess_sent_func(sent) if self.preprocess_sent_func is not None else sent.text,
-                metadata=get_sentence_metadata(sent) if self.add_sentence_metadata else None,
+                text=sent.text if self.preprocess_sent_func is None else self.preprocess_sent_func(sent),
             )
             sentences.append(sentence)
         return sentences
