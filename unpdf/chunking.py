@@ -120,7 +120,7 @@ class Chunker:
             sentences = self.get_sentences_from_page(page=entity)
         elif isinstance(entity, Document):
             sentences = list()
-            for page in tqdm(entity.pages) if progress_bar else entity.pages:
+            for page in tqdm(entity.pages, disable=not progress_bar):
                 sentences.extend(self.get_sentences_from_page(page))
         else:
             raise ValueError(f'{type(entity)} is not supported. `entity` must be one of (QuasiParagraph, Page, Document)')
